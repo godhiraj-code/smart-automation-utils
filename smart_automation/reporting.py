@@ -1,0 +1,110 @@
+import datetime
+import os
+from .logger import logger
+
+class HTMLReporter:
+    def __init__(self, report_dir="reports"):
+        self.report_dir = report_dir
+        self.results = []
+        if not os.path.exists(self.report_dir):
+            os.makedirs(self.report_dir)
+
+    def add_result(self, test_name, status, message="", duration=0):
+        self.results.append({
+            "name": test_name,
+            "status": status,
+            "message": message,
+            "duration": duration,
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    def generate_report(self, filename="test_report.html"):
+        filepath = os.path.join(self.report_dir, filename)
+        
+        passed_count = sum(1 for r in self.results if r['status'] == 'PASS')
+        failed_count = sum(1 for r in self.results if r['status'] == 'FAIL')
+        total_count = len(self.results)
+
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Smart Automation - Enterprise Report</title>
+            <style>
+                :root {{ --primary: #2563eb; --success: #059669; --error: #dc2626; --bg: #f8fafc; }}
+                body {{ font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: #1e293b; line-height: 1.5; margin: 0; padding: 2rem; }}
+                .container {{ max-width: 1000px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }}
+                header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 1.5rem; margin-bottom: 2rem; }}
+                h1 {{ margin: 0; color: var(--primary); font-size: 1.875rem; }}
+                .stats {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }}
+                .stat-card {{ padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; }}
+                .stat-card h3 {{ margin: 0; font-size: 0.875rem; text-transform: uppercase; color: #64748b; }}
+                .stat-card p {{ margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 700; }}
+                table {{ width: 100%; border-collapse: collapse; }}
+                th {{ text-align: left; padding: 0.75rem; background: #f1f5f9; font-weight: 600; border-bottom: 2px solid #e2e8f0; }}
+                td {{ padding: 0.75rem; border-bottom: 1px solid #e2e8f0; }}
+                .badge {{ padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }}
+                .PASS {{ background: #d1fae5; color: #065f46; }}
+                .FAIL {{ background: #fee2e2; color: #991b1b; }}
+                .duration {{ color: #64748b; font-family: monospace; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <h1>Smart Automation Execution</h1>
+                    <div style="text-align: right">
+                        <div style="font-size: 0.875rem; color: #64748b">Report Generated</div>
+                        <div style="font-weight: 600">{datetime.datetime.now().strftime("%B %d, %G at %I:%M %p")}</div>
+                    </div>
+                </header>
+                
+                <div class="stats">
+                    <div class="stat-card"><h3>Total Tests</h3><p>{total_count}</p></div>
+                    <div class="stat-card" style="border-left: 4px solid var(--success)"><h3>Passed</h3><p style="color: var(--success)">{passed_count}</p></div>
+                    <div class="stat-card" style="border-left: 4px solid var(--error)"><h3>Failed</h3><p style="color: var(--error)">{failed_count}</p></div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Action / Test Case</th>
+                            <th>Status</th>
+                            <th>Duration</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        """
+        
+        for res in self.results:
+            html += f"""
+                <tr>
+                    <td style="font-weight: 500">{res['name']}</td>
+                    <td><span class="badge {res['status']}">{res['status']}</span></td>
+                    <td class="duration">{res['duration']:.3f}s</td>
+                    <td style="font-size: 0.875rem; color: #475569">{res['message'] or res['timestamp']}</td>
+                </tr>
+            """
+            
+        html += """
+                    </tbody>
+                </table>
+                <footer style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; font-size: 0.75rem; color: #94a3b8; text-align: center;">
+                    Generated by Smart Automation Framework v0.2.0 - Professional Integrity Verified
+                </footer>
+            </div>
+        </body>
+        </html>
+        """
+        
+        try:
+            with open(filepath, "w") as f:
+                f.write(html)
+            logger.info(f"Report: Enterprise HTML report generated at {filepath}")
+        except Exception as e:
+            logger.error(f"Report: Failed to generate report: {e}")
+
+# Global reporter instance
+reporter = HTMLReporter()
