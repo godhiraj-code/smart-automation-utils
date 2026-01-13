@@ -1,0 +1,8 @@
+{
+    "browser": "chrome",
+    "timeout": 10,
+    "headless": false,
+    "log_level": "INFO",
+    "log_to_file": true,
+    "log_file_path": "logs/automation.log"
+}
