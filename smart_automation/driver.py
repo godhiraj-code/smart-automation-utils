@@ -57,6 +57,10 @@ class SmartDriver:
                 options = webdriver.ChromeOptions()
                 if headless:
                     options.add_argument("--headless")
+                    # Linux-specific flags for CI/Docker environments
+                    options.add_argument("--no-sandbox")
+                    options.add_argument("--disable-dev-shm-usage")
+                    options.add_argument("--disable-gpu")
                 if proxy:
                     options.add_argument(f'--proxy-server={proxy}')
                 
