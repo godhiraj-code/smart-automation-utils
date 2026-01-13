@@ -1,0 +1,57 @@
+{
+  "title": "Glow Test Report",
+  "generated_at": "2026-01-13 20:53:41",
+  "duration": 17.473581,
+  "summary": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "total": 1
+  },
+  "tests": [
+    {
+      "nodeid": "tests/test_basic.py::TestSmartDriver::test_google_search",
+      "outcome": "passed",
+      "duration": 17.312326600000233,
+      "longrepr": null,
+      "sections": [
+        [
+          "Captured stdout call",
+          "Executing Fluent API test...\nVerifying page content...\nTest Passed with Fluent API!\n"
+        ],
+        [
+          "Captured stderr call",
+          "2026-01-13 20:53:27,563 - smart_automation - INFO - Enterprise SmartDriver initialized for chrome (headless=True)\n2026-01-13 20:53:27,563 - smart_automation - INFO - Navigating to: https://www.dhirajdas.dev\n2026-01-13 20:53:38,472 - smart_automation - ERROR - Element not found within 10s: xpath=//a[contains(text(), 'Home')]\n2026-01-13 20:53:38,652 - smart_automation - INFO - Screenshot saved to: screenshots\\not_found___a_contai_20260113-205338.png\n2026-01-13 20:53:39,278 - smart_automation - INFO - Terminating Enterprise SmartDriver session\n2026-01-13 20:53:39,284 - smart_automation - INFO - Report: Enterprise HTML report generated at reports\\test_report.html\n"
+        ],
+        [
+          "Captured log call",
+          "\u001b[32mINFO    \u001b[0m smart_automation:driver.py:51 Enterprise SmartDriver initialized for chrome (headless=True)\n\u001b[32mINFO    \u001b[0m smart_automation:driver.py:85 Navigating to: https://www.dhirajdas.dev\n\u001b[1m\u001b[31mERROR   \u001b[0m smart_automation:driver.py:104 Element not found within 10s: xpath=//a[contains(text(), 'Home')]\n\u001b[32mINFO    \u001b[0m smart_automation:utils.py:31 Screenshot saved to: screenshots\\not_found___a_contai_20260113-205338.png\n\u001b[32mINFO    \u001b[0m smart_automation:driver.py:201 Terminating Enterprise SmartDriver session\n\u001b[32mINFO    \u001b[0m smart_automation:reporting.py:105 Report: Enterprise HTML report generated at reports\\test_report.html"
+        ]
+      ],
+      "steps": [],
+      "screenshots": []
+    }
+  ],
+  "environment": {
+    "Python": "3.14.0",
+    "Platform": "win32"
+  },
+  "history": [
+    {
+      "id": 2,
+      "timestamp": "2026-01-13T20:53:41.738681",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 17.473581
+    },
+    {
+      "id": 1,
+      "timestamp": "2026-01-13T20:49:29.120894",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 34.241194
+    }
+  ]
+}

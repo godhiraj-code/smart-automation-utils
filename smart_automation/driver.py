@@ -1,22 +1,26 @@
+from typing import Optional, Any, Dict, List, TypeVar, Self
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.common.exceptions import TimeoutException as SeleniumTimeoutException
-from .utils import highlight_element
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.firefox.service import Service as FirefoxService
+
+from .utils import highlight_element, capture_screenshot
 from .logger import logger, setup_logger
 from .exceptions import DriverError, ElementError, TimeoutError
 from .config import Config
 
+T = TypeVar('T', bound='SmartDriver')
+
 class SmartDriver:
-    def __init__(self, config_path=None, **kwargs):
+    def __init__(self, config_path: Optional[str] = None, **kwargs: Any) -> None:
         """
-        Initializes the SmartDriver.
-        
-        Args:
-            config_path: Path to a JSON config file.
-            **kwargs: Overrides for configuration (e.g., browser_name, timeout, headless).
-                     Supports legacy positional arguments if config_path is a string like 'chrome'.
+        Initializes the SmartDriver with Enterprise-grade configurations.
         """
         # Backwards compatibility for positional browser_name
         if config_path and not config_path.endswith('.json') and config_path in ['chrome', 'firefox', 'edge']:
@@ -36,17 +40,17 @@ class SmartDriver:
             log_file=self.config.log_file_path if self.config.log_to_file else None
         )
 
-        self.browser_name = self.config.browser.lower()
-        self.timeout = self.config.timeout
-        self.driver = self._init_driver(self.config.headless)
-        self.wait = WebDriverWait(self.driver, self.timeout)
+        self.browser_name: str = self.config.browser.lower()
+        self.timeout: int = self.config.timeout
+        self.driver: webdriver.Remote = self._init_driver(self.config.headless)
+        self.wait: WebDriverWait = WebDriverWait(self.driver, self.timeout)
         
         from .plugins import PluginManager
-        self.plugin_manager = PluginManager(self)
+        self.plugin_manager: PluginManager = PluginManager(self)
         
-        logger.info(f"SmartDriver initialized for {self.browser_name} (headless={self.config.headless})")
+        logger.info(f"Enterprise SmartDriver initialized for {self.browser_name} (headless={self.config.headless})")
 
-    def _init_driver(self, headless):
+    def _init_driver(self, headless: bool) -> webdriver.Remote:
         try:
             proxy = self.config.get("proxy")
             if self.browser_name == "chrome":
@@ -55,36 +59,39 @@ class SmartDriver:
                     options.add_argument("--headless")
                 if proxy:
                     options.add_argument(f'--proxy-server={proxy}')
-                return webdriver.Chrome(options=options)
+                
+                service = ChromeService(ChromeDriverManager().install())
+                return webdriver.Chrome(service=service, options=options)
+            
             elif self.browser_name == "firefox":
                 options = webdriver.FirefoxOptions()
                 if headless:
                     options.add_argument("--headless")
+                
+                service = FirefoxService(GeckoDriverManager().install())
                 if proxy:
-                    firefox_capabilities = webdriver.DesiredCapabilities.FIREFOX
-                    firefox_capabilities['proxy'] = {
-                        "proxyType": "manual",
-                        "httpProxy": proxy,
-                        "ftpProxy": proxy,
-                        "sslProxy": proxy
-                    }
-                    return webdriver.Firefox(options=options, desired_capabilities=firefox_capabilities)
-                return webdriver.Firefox(options=options)
+                    options.set_preference("network.proxy.type", 1)
+                    options.set_preference("network.proxy.http", proxy.split(':')[0])
+                    options.set_preference("network.proxy.http_port", int(proxy.split(':')[1]))
+                return webdriver.Firefox(service=service, options=options)
             else:
                 raise DriverError(f"Unsupported browser: {self.browser_name}")
         except Exception as e:
             logger.error(f"Failed to initialize driver: {e}")
             raise DriverError(f"Driver initialization failed: {e}")
 
-    def get(self, url):
+    def get(self, url: str) -> Self:
+        """Navigates to a URL. Supports Fluent API chaining."""
         logger.info(f"Navigating to: {url}")
         try:
             self.driver.get(url)
+            return self
         except Exception as e:
-            logger.error(f"Failed to navigate to {url}: {e}")
+            logger.error(f"Navigation to {url} failed: {e}")
             raise DriverError(f"Navigation failed: {e}")
 
-    def find_element(self, by, value, highlight=True):
+    def find_element(self, by: str, value: str, highlight: bool = True) -> Optional[WebElement]:
+        """Finds an element with built-in retry and visual logging."""
         try:
             logger.debug(f"Searching for element: {by}={value}")
             element = self.wait.until(EC.presence_of_element_located((by, value)))
@@ -95,103 +102,108 @@ class SmartDriver:
         except SeleniumTimeoutException:
             msg = f"Element not found within {self.timeout}s: {by}={value}"
             logger.error(msg)
-            from .utils import capture_screenshot
-            # Sanitize filename for Windows
             sanitized_value = "".join([c if c.isalnum() else "_" for c in value[:10]])
             capture_screenshot(self.driver, filename_prefix=f"not_found_{sanitized_value}")
             return None
 
-    def add_cookie(self, name, value, **kwargs):
-        """Add a cookie to the current session."""
+    def add_cookie(self, name: str, value: str, **kwargs: Any) -> Self:
+        """Add a cookie. Supports Fluent API."""
         cookie = {'name': name, 'value': value}
         cookie.update(kwargs)
         self.driver.add_cookie(cookie)
         logger.info(f"Added cookie: {name}={value}")
+        return self
 
-    def get_cookies(self):
-        """Returns all cookies."""
-        return self.driver.get_cookies()
-
-    def delete_all_cookies(self):
-        """Deletes all cookies."""
+    def delete_all_cookies(self) -> Self:
+        """Deletes all cookies. Supports Fluent API."""
         self.driver.delete_all_cookies()
         logger.info("Deleted all cookies")
+        return self
 
-    def scroll_to_element(self, element):
-        """Scrolls to the specified element."""
+    def scroll_to_element(self, element: WebElement) -> Self:
+        """Scrolls to element. Supports Fluent API."""
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-        logger.debug("Scrolled to element")
+        return self
 
-    def set_page_load_timeout(self, seconds):
-        """Sets the amount of time to wait for a page load to complete."""
-        self.driver.set_page_load_timeout(seconds)
-        logger.info(f"Page load timeout set to {seconds}s")
-
-    def is_visible(self, by, value):
-        """Checks if an element is visible."""
-        try:
-            return self.driver.find_element(by, value).is_displayed()
-        except:
-            return False
-
-    def click(self, by, value):
+    def click(self, by: str, value: str) -> Self:
+        """Clicks an element with event dispatching, result tracking, and stability check."""
         from .events import dispatcher
         from .reporting import reporter
         import time
+        
+        if self.config.get("waitless_enabled"):
+            try:
+                import waitless
+                waitless.stabilize(self.driver)
+            except Exception as e:
+                logger.warning(f"Waitless stabilization skipped: {e}")
+
         start_time = time.time()
         element = self.find_element(by, value)
         if element:
             try:
                 self.wait.until(EC.element_to_be_clickable((by, value)))
                 element.click()
-                logger.info(f"Clicked element: {by}={value}")
+                logger.info(f"Clicked: {by}={value}")
                 dispatcher.dispatch("click", {"by": by, "value": value})
                 reporter.add_result(f"Click: {by}={value}", "PASS", duration=time.time()-start_time)
+                return self
             except Exception as e:
-                logger.error(f"Failed to click element {by}={value}: {e}")
+                logger.error(f"Click failed for {by}={value}: {e}")
                 reporter.add_result(f"Click: {by}={value}", "FAIL", message=str(e), duration=time.time()-start_time)
                 raise ElementError(f"Click failed: {e}")
         else:
-             reporter.add_result(f"Click: {by}={value}", "FAIL", message="Element not found", duration=time.time()-start_time)
+             reporter.add_result(f"Click: {by}={value}", "FAIL", message="Not found", duration=time.time()-start_time)
+             return self
 
-    def send_keys(self, by, value, text):
+    def send_keys(self, by: str, value: str, text: str) -> Self:
+        """Sends keys with result tracking and stability check. Supports Fluent API."""
         from .events import dispatcher
         from .reporting import reporter
         import time
+
+        if self.config.get("waitless_enabled"):
+            try:
+                import waitless
+                waitless.stabilize(self.driver)
+            except Exception as e:
+                logger.warning(f"Waitless stabilization skipped: {e}")
+
         start_time = time.time()
         element = self.find_element(by, value)
         if element:
             try:
                 element.clear()
                 element.send_keys(text)
-                logger.info(f"Sent keys to {by}={value}: {text}")
-                dispatcher.dispatch("send_keys", {"by": by, "value": value, "text": text})
+                logger.info(f"Sent keys to {by}={value}")
+                dispatcher.dispatch("send_keys", {"by": by, "value": value})
                 reporter.add_result(f"Send Keys: {by}={value}", "PASS", duration=time.time()-start_time)
+                return self
             except Exception as e:
-                logger.error(f"Failed to send keys to {by}={value}: {e}")
+                logger.error(f"Send keys failed for {by}={value}: {e}")
                 reporter.add_result(f"Send Keys: {by}={value}", "FAIL", message=str(e), duration=time.time()-start_time)
                 raise ElementError(f"Send keys failed: {e}")
         else:
-            reporter.add_result(f"Send Keys: {by}={value}", "FAIL", message="Element not found", duration=time.time()-start_time)
+            reporter.add_result(f"Send Keys: {by}={value}", "FAIL", message="Not found", duration=time.time()-start_time)
+            return self
 
-    def inspect_element(self, by, value):
-        """Highlights an element for debugging purposes."""
-        logger.info(f"Inspecting element: {by}={value}")
-        element = self.find_element(by, value, highlight=True)
-        if element:
-            logger.info("Element found and highlighted.")
-        else:
-            logger.warning("Element not found for inspection.")
+    def stabilize(self) -> Self:
+        """Manually trigger waitless stabilization."""
+        try:
+            import waitless
+            waitless.stabilize(self.driver)
+        except Exception as e:
+            logger.warning(f"Fail to stabilize: {e}")
+        return self
 
-    def quit(self):
-        logger.info("Quitting SmartDriver")
+    def quit(self) -> None:
+        """Quits the driver and generates final report."""
+        logger.info("Terminating Enterprise SmartDriver session")
         if hasattr(self, 'plugin_manager'):
             self.plugin_manager.notify_teardown()
-        
         from .reporting import reporter
         reporter.generate_report()
-        
         self.driver.quit()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         return getattr(self.driver, name)

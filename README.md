@@ -1,17 +1,17 @@
-# Smart Automation Utils
+# Smart Automation Utils v0.2.0
 
-A professional-grade Python framework designed for automation developers working with Selenium and Appium. `smart-automation-utils` simplifies the complexity of web and mobile automation with built-in reliability, logging, and performance monitoring.
+An Enterprise-grade Python framework for robust web and mobile automation. `smart-automation-utils` transforms standard Selenium/Appium into a stable, fluent, and highly observable automation engine.
 
-## 🚀 Key Features
+## 🚀 Enterprise Features
 
-- **SmartDriver**: Enhanced Selenium wrapper with automatic waits, retry logic, and fallback mechanisms.
-- **SmartMobileDriver**: Full Appium support for cross-platform mobile testing.
-- **Visual Debugging**: Automatic screenshot capture on failure and element highlighting.
-- **Reliability Foundation**: Structured logging, custom exceptions, and flexible YAML/JSON configuration.
-- **Performance & Monitoring**: Real-time tracking of execution time and memory usage.
-- **Data Utilities**: Built-in test data generators and CSV/JSON data providers.
-- **Extensibility**: Plugin architecture and Event Observer pattern for customized driver behavior.
-- **CI/CD Ready**: Dockerized testing support and GitHub Actions integration.
+- **Fluent API**: Chain actions for readable and concise test scripts. 
+- **Flakiness Elimination**: Built-in **Waitless** integration for intelligent UI stabilization.
+- **Page Object Model (POM)**: Built-in `BasePage` and `SmartDriver` integration for scalable architecture.
+- **Zero-Config Drivers**: Automated driver management via `webdriver-manager`.
+- **Glow Reporting**: High-fidelity test diagnostics with `pytest-glow-report`.
+- **Hybrid Support**: Seamlessly switch between Web (Selenium) and Mobile (Appium).
+- **Proactive Debugging**: Automatic screenshots on failure + element highlighting.
+- **Performance Intelligence**: Integrated memory and execution time monitoring.
 
 ## 📦 Installation
 
@@ -21,75 +21,70 @@ pip install smart-automation-utils
 
 ## 🛠 Usage
 
-### Basic Web Automation
+### Fluent & Professional API
 ```python
 from smart_automation import SmartDriver
 from selenium.webdriver.common.by import By
 
-# Initialized with default_config.json or environment variables
+# Zero-config initialization
+driver = SmartDriver(browser="chrome", headless=True)
+
+driver.get("https://www.dhirajdas.dev") \
+      .click(By.XPATH, "//a[text()='Home']") \
+      .send_keys(By.NAME, "search", "Automation") \
+      .quit()
+```
+
+### Page Object Model (POM)
+```python
+from smart_automation import SmartDriver, BasePage
+from selenium.webdriver.common.by import By
+
+class LoginPage(BasePage):
+    def login(self, user, pwd):
+        return self.send_keys(By.ID, "user", user) \
+                   .send_keys(By.ID, "pass", pwd) \
+                   .click(By.ID, "login-btn")
+
 driver = SmartDriver()
-
-try:
-    driver.get("https://www.example.com")
-    driver.click(By.ID, "submit-button")
-    driver.send_keys(By.NAME, "username", "admin")
-finally:
-    driver.quit()
+login_page = LoginPage(driver)
+login_page.open().login("admin", "secret")
 ```
 
-### Mobile Automation
+### Performance & Data
 ```python
-from smart_automation import SmartMobileDriver
+from smart_automation import monitor, DataGenerator
 
-caps = {
-    "platformName": "Android",
-    "automationName": "UiAutomator2",
-    "deviceName": "emulator-5554",
-    "app": "/path/to/app.apk"
-}
-
-driver = SmartMobileDriver(mobile_caps=caps)
-# Standard Appium/Selenium commands
-driver.quit()
-```
-
-### Performance Monitoring
-```python
-from smart_automation import monitor
-
-monitor.start_timer("login_flow")
-# ... perform login ...
-monitor.stop_timer("login_flow")
+monitor.start_timer("API_Sync")
+email = DataGenerator.random_email()
+# Perform actions...
+monitor.stop_timer("API_Sync")
 monitor.log_memory_usage()
 ```
 
-### Data Generation
-```python
-from smart_automation import DataGenerator
+## 📊 Reporting
 
-email = DataGenerator.random_email()
-password = DataGenerator.random_string(12)
-```
+We use **`pytest-glow-report`** for beautiful, data-rich execution summaries.
+
+1. **Run Tests**:
+   ```bash
+   pytest
+   ```
+2. **View Report**:
+   Open `reports/report.html` in your browser for a full visual breakdown of passes, failures, and execution timings.
 
 ## ⚙️ Configuration
 
-The framework supports `SMART_AUTO_` prefixed environment variables or a `config.json` file.
+Configure via `config.json` or `SMART_AUTO_` environment variables.
 
 ```json
 {
     "browser": "chrome",
     "timeout": 15,
     "headless": true,
-    "log_level": "INFO"
+    "proxy": "localhost:8080"
 }
 ```
 
-## 🧪 Testing
-
-Run the comprehensive test suite with:
-```bash
-python -m unittest discover tests
-```
-
 ---
-Built with ❤️ for automation engineers.
+Maintained by [Dhiraj Das](https://www.dhirajdas.dev)

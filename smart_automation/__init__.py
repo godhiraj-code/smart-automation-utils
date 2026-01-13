@@ -1,5 +1,6 @@
 from .driver import SmartDriver
 from .mobile_driver import SmartMobileDriver
+from .base_page import BasePage
 from .logger import logger
 from .exceptions import SmartAutomationError, DriverError, ElementError, TimeoutError, ConfigurationError
 from .config import Config
