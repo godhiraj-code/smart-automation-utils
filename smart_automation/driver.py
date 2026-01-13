@@ -1,4 +1,4 @@
-from typing import Optional, Any, Dict, List, TypeVar, Self
+from typing import Optional, Any, Dict, List, TypeVar
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -84,7 +84,7 @@ class SmartDriver:
             logger.error(f"Failed to initialize driver: {e}")
             raise DriverError(f"Driver initialization failed: {e}")
 
-    def get(self, url: str) -> Self:
+    def get(self, url: str) -> "SmartDriver":
         """Navigates to a URL. Supports Fluent API chaining."""
         logger.info(f"Navigating to: {url}")
         try:
@@ -110,7 +110,7 @@ class SmartDriver:
             capture_screenshot(self.driver, filename_prefix=f"not_found_{sanitized_value}")
             return None
 
-    def add_cookie(self, name: str, value: str, **kwargs: Any) -> Self:
+    def add_cookie(self, name: str, value: str, **kwargs: Any) -> "SmartDriver":
         """Add a cookie. Supports Fluent API."""
         cookie = {'name': name, 'value': value}
         cookie.update(kwargs)
@@ -118,18 +118,18 @@ class SmartDriver:
         logger.info(f"Added cookie: {name}={value}")
         return self
 
-    def delete_all_cookies(self) -> Self:
+    def delete_all_cookies(self) -> "SmartDriver":
         """Deletes all cookies. Supports Fluent API."""
         self.driver.delete_all_cookies()
         logger.info("Deleted all cookies")
         return self
 
-    def scroll_to_element(self, element: WebElement) -> Self:
+    def scroll_to_element(self, element: WebElement) -> "SmartDriver":
         """Scrolls to element. Supports Fluent API."""
         self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
         return self
 
-    def click(self, by: str, value: str) -> Self:
+    def click(self, by: str, value: str) -> "SmartDriver":
         """Clicks an element with event dispatching, result tracking, and stability check."""
         from .events import dispatcher
         from .reporting import reporter
@@ -160,7 +160,7 @@ class SmartDriver:
              reporter.add_result(f"Click: {by}={value}", "FAIL", message="Not found", duration=time.time()-start_time)
              return self
 
-    def send_keys(self, by: str, value: str, text: str) -> Self:
+    def send_keys(self, by: str, value: str, text: str) -> "SmartDriver":
         """Sends keys with result tracking and stability check. Supports Fluent API."""
         from .events import dispatcher
         from .reporting import reporter
@@ -191,7 +191,7 @@ class SmartDriver:
             reporter.add_result(f"Send Keys: {by}={value}", "FAIL", message="Not found", duration=time.time()-start_time)
             return self
 
-    def stabilize(self) -> Self:
+    def stabilize(self) -> "SmartDriver":
         """Manually trigger waitless stabilization."""
         try:
             import waitless
